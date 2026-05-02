@@ -1,0 +1,38 @@
+# Frontend .gitignore
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Production build
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Misc
+.cache/
+.parcel-cache/
+

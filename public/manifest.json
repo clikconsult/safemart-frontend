@@ -1,0 +1,12 @@
+{
+  "name": "Safemart - Premium Security Systems",
+  "short_name": "Safemart",
+  "description": "Professional-grade CCTV, alarm systems, access control and networking solutions for Nigeria.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9f9fb",
+  "theme_color": "#1a1c1d",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "security"],
+  "lang": "en-NG"
+}
