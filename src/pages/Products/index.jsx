@@ -6,10 +6,10 @@ import { EmptyState, Pagination, Skeleton } from "../../components/ui"
 
 const CATEGORIES = ["CCTV", "Alarms", "Access Control", "Intercom", "Networking", "Other"]
 const SORT_OPTIONS = [
-  { label: "Newest", value: "-createdAt" },
-  { label: "Price: Low", value: "price" },
-  { label: "Price: High", value: "-price" },
-  { label: "Top Rated", value: "-ratings" },
+  { label: "Newest", value: "newest" },
+  { label: "Price: Low", value: "price_asc" },
+  { label: "Price: High", value: "price_desc" },
+  { label: "Top Rated", value: "popular" },
 ]
 const PRICE_RANGES = [
   { label: "All Prices", min: "", max: "" },
@@ -28,8 +28,8 @@ export default function ProductsPage() {
 
   const page = Number(searchParams.get("page") || 1)
   const category = searchParams.get("category") || ""
-  const sort = searchParams.get("sort") || "-createdAt"
-  const search = searchParams.get("search") || ""
+  const sort = searchParams.get("sort") || "newest"
+  const keyword = searchParams.get("keyword") || ""
   const minPrice = searchParams.get("minPrice") || ""
   const maxPrice = searchParams.get("maxPrice") || ""
   const inStock = searchParams.get("inStock") || ""
@@ -43,7 +43,7 @@ export default function ProductsPage() {
         limit: 12,
         ...(category && { category }),
         ...(sort && { sort }),
-        ...(search && { search }),
+        ...(keyword && { keyword }),
         ...(minPrice && { minPrice }),
         ...(maxPrice && { maxPrice }),
         ...(inStock && { inStock: true }),
@@ -56,7 +56,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, category, sort, search, minPrice, maxPrice, inStock])
+  }, [page, category, sort, keyword, minPrice, maxPrice, inStock])
 
   useEffect(() => {
     fetchProducts()
@@ -86,7 +86,7 @@ export default function ProductsPage() {
   }
 
   const activePriceLabel = PRICE_RANGES.find(range => range.min === minPrice && range.max === maxPrice)?.label || "All Prices"
-  const hasFilters = category || minPrice || maxPrice || inStock || search
+  const hasFilters = category || minPrice || maxPrice || inStock || keyword
 
   return (
     <div className="bg-surface min-h-screen">
@@ -113,7 +113,7 @@ export default function ProductsPage() {
                 <p className="label-overline mb-3">Search</p>
                 <div className="relative">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-                  <input type="text" placeholder="Search..." value={search} onChange={e => setParam("search", e.target.value)} className="input-field pl-8 py-2.5 text-xs" />
+                  <input type="text" placeholder="Search..." value={keyword} onChange={e => setParam("keyword", e.target.value)} className="input-field pl-8 py-2.5 text-xs" />
                 </div>
               </div>
 

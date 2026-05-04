@@ -223,15 +223,20 @@ export default function Checkout() {
               <h2 className="headline-md text-base text-on-surface mb-5">Order Summary</h2>
 
               <div className="space-y-3 mb-5 max-h-52 overflow-y-auto scrollbar-hide divide-y divide-outline-variant/10">
-                {cart?.items?.map(item => (
-                  <div key={item._id} className="flex items-center gap-3 pt-3 first:pt-0">
-                    <div className="w-11 h-11 bg-surface-container rounded-sm overflow-hidden shrink-0">
-                      {item.product?.images?.[0] && <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />}
+                {cart?.items?.map(item => {
+                  const productId = item.product?._id || item.product
+                  const imgSrc = item.image || item.product?.images?.[0]
+
+                  return (
+                    <div key={String(productId)} className="flex items-center gap-3 pt-3 first:pt-0">
+                      <div className="w-11 h-11 bg-surface-container rounded-sm overflow-hidden shrink-0">
+                        {imgSrc && <img src={imgSrc} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <p className="font-body text-xs text-on-surface flex-1 line-clamp-2">{item.name || item.product?.name}</p>
+                      <span className="font-label text-[10px] text-secondary shrink-0">&times;{item.quantity}</span>
                     </div>
-                    <p className="font-body text-xs text-on-surface flex-1 line-clamp-2">{item.product?.name}</p>
-                    <span className="font-label text-[10px] text-secondary shrink-0">&times;{item.quantity}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <div className="border-t border-outline-variant/20 pt-4 space-y-2.5">

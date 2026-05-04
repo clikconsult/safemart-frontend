@@ -7,33 +7,28 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // On mount: restore session from token
+  // On mount: restore session from HttpOnly cookies (no localStorage token)
   useEffect(() => {
-    const token = localStorage.getItem('accessToken')
-    if (!token) { setLoading(false); return }
     authApi.me()
       .then(res => setUser(res.data.data))
-      .catch(() => localStorage.removeItem('accessToken'))
+      .catch(() => setUser(null))
       .finally(() => setLoading(false))
   }, [])
 
   const login = useCallback(async (email, password) => {
     const res = await authApi.login({ email, password })
-    localStorage.setItem('accessToken', res.data.accessToken)
     setUser(res.data.data)
     return res.data
   }, [])
 
   const register = useCallback(async (data) => {
     const res = await authApi.register(data)
-    localStorage.setItem('accessToken', res.data.accessToken)
     setUser(res.data.data)
     return res.data
   }, [])
 
   const logout = useCallback(async () => {
     try { await authApi.logout() } catch {}
-    localStorage.removeItem('accessToken')
     setUser(null)
   }, [])
 
@@ -51,4 +46,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
 }
-

@@ -7,12 +7,11 @@ const api = axios.create({
   withCredentials: true,
 })
 
-// Attach token from localStorage on every request.
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken")
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+/**
+ * Auth relies on HttpOnly cookies set by the backend.
+ * Keep withCredentials: true so cookies are sent automatically.
+ */
+api.interceptors.request.use((config) => config)
 
 // Handle 401 globally by redirecting to login.
 api.interceptors.response.use(

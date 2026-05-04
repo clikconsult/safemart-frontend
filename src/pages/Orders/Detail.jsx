@@ -101,7 +101,7 @@ export default function OrderDetail() {
                     >
                       {i < stepIndex ? "\u2713" : i + 1}
                     </div>
-                    <span className={`font-label text-[9px] mt-2 capitalize uppercase tracking-wider ${i <= stepIndex ? "text-on-surface" : "text-secondary/50"}`}>
+                    <span className={`font-label text-[9px] mt-2 uppercase tracking-wider ${i <= stepIndex ? "text-on-surface" : "text-secondary/50"}`}>
                       {status}
                     </span>
                   </div>
