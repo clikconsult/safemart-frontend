@@ -1,12 +1,9 @@
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
-    ? `${import.meta.env.VITE_API_URL}/api/v1`
-    : "/api/v1",
+  baseURL: "/api/v1",
   withCredentials: true,
 })
-
 /**
  * Auth relies on HttpOnly cookies set by the backend.
  * Keep withCredentials: true so cookies are sent automatically.
