@@ -3,7 +3,10 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://safemart-backend.onrender.com*"
+      "destination": "https://onrender.com*"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "source": "/(.*)",
