@@ -1,6 +1,14 @@
 
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://api.safemartng.com/$1" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://onrender.com*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
+
