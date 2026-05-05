@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://api.safemartng.com/api/$1" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.safemartng.com/api/:path*"
+    }
   ]
 }
