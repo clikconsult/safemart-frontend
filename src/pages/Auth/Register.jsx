@@ -1,11 +1,13 @@
 ﻿import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 import toast from "react-hot-toast"
 
 export default function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get("redirect") || "/"
   const [form, setForm]       = useState({ fullName: "", email: "", password: "", phone: "" })
   const [loading, setLoading] = useState(false)
   const [show, setShow]       = useState(false)
@@ -18,7 +20,7 @@ export default function Register() {
       setLoading(true)
       await register(form)
       toast.success("Account created")
-      navigate("/")
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed")
     } finally { setLoading(false) }
@@ -55,7 +57,7 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label-overline mb-2 block">Full Name</label>
-              <input type="text" required value={form.fullName} onChange={set("fullName")} className="input-field" placeholder="John Doe" autoComplete="name" />
+              <input type="text" required value={form.fullName} onChange={set("fullName")} className="input-field" placeholder="Your Name" autoComplete="name" />
             </div>
             <div>
               <label className="label-overline mb-2 block">Email</label>
@@ -85,7 +87,7 @@ export default function Register() {
 
           <p className="font-body text-sm text-secondary text-center mt-8">
             Have an account?{" "}
-            <Link to="/login" className="text-on-surface font-medium underline underline-offset-2 hover:text-tertiary transition-colors">Sign in</Link>
+            <Link to={redirectTo !== "/" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"} className="text-on-surface font-medium underline underline-offset-2 hover:text-tertiary transition-colors">Sign in</Link>
           </p>
         </div>
       </div>

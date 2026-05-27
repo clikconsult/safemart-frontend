@@ -2,10 +2,11 @@ import api from "./client"
 
 // Auth
 export const authApi = {
-  register: (data) => api.post("/auth/register", data),
-  login: (data) => api.post("/auth/login", data),
-  logout: () => api.post("/auth/logout"),
-  me: () => api.get("/auth/me"),
+  register: (data) => api.post("/auth/register", data, { skipAuthRedirect: true }),
+  login: (data) => api.post("/auth/login", data, { skipAuthRedirect: true }),
+  logout: () => api.post("/auth/logout", null, { skipAuthRedirect: true }),
+  me: () => api.get("/auth/me", { skipAuthRedirect: true }),
+  refresh: () => api.post("/auth/refresh", null, { skipAuthRedirect: true, skipAuthRefresh: true }),
 }
 
 // Contact

@@ -2,7 +2,7 @@ import { LegalLayout, LegalSection, LegalList } from "./LegalLayout"
 
 export default function TermsAndConditions() {
   return (
-    <LegalLayout label="Legal" title="Terms & Conditions" lastUpdated="April 2025">
+    <LegalLayout label="Legal" title="Terms & Conditions" lastUpdated="April 2026">
       <LegalSection title="1. Agreement to Terms">
         <p>
           By accessing or using Safemart and purchasing our products, you agree
@@ -54,8 +54,9 @@ export default function TermsAndConditions() {
       <LegalSection title="7. Contact Us">
         <div className="mt-3 p-5 bg-surface-container-low rounded-md ghost-border space-y-1">
           <p className="font-headline font-bold text-sm text-on-surface">Safemart</p>
-          <p>Email: legal@safemart.ng</p>
-          <p>Phone: +234 800 000 0000</p>
+          <p>Email: contact@safemart.ng</p>
+          <p>Phone: +234 903 854 4515</p>
+          <p>Address: 10, Brooks Street,Uyo, Nigeria</p>
         </div>
       </LegalSection>
     </LegalLayout>

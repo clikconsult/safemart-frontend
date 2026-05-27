@@ -1,13 +1,15 @@
 import { useState } from "react"
 import toast from "react-hot-toast"
-import { Link, useNavigate, useLocation } from "react-router-dom"
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import { useAuth } from "../../context/AuthContext"
 
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from?.pathname || "/"
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get("redirect")
+  const from = redirectTo || location.state?.from?.pathname || "/"
   const [form, setForm] = useState({ email: "", password: "" })
   const [loading, setLoading] = useState(false)
   const [show, setShow] = useState(false)
@@ -83,7 +85,7 @@ export default function Login() {
 
           <p className="font-body text-sm text-secondary text-center mt-8">
             No account?{" "}
-            <Link to="/register" className="text-on-surface font-medium underline underline-offset-2 hover:text-tertiary transition-colors">Create one</Link>
+            <Link to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"} className="text-on-surface font-medium underline underline-offset-2 hover:text-tertiary transition-colors">Create one</Link>
           </p>
         </div>
       </div>

@@ -33,6 +33,7 @@ export default function ProductsPage() {
   const minPrice = searchParams.get("minPrice") || ""
   const maxPrice = searchParams.get("maxPrice") || ""
   const inStock = searchParams.get("inStock") || ""
+  const isFeatured = searchParams.get("isFeatured") || ""
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
@@ -47,6 +48,7 @@ export default function ProductsPage() {
         ...(minPrice && { minPrice }),
         ...(maxPrice && { maxPrice }),
         ...(inStock && { inStock: true }),
+        ...(isFeatured && { isFeatured: true }),
       })
 
       setProducts(res.data.data)
@@ -56,7 +58,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, category, sort, keyword, minPrice, maxPrice, inStock])
+  }, [page, category, sort, keyword, minPrice, maxPrice, inStock, isFeatured])
 
   useEffect(() => {
     fetchProducts()
@@ -86,7 +88,7 @@ export default function ProductsPage() {
   }
 
   const activePriceLabel = PRICE_RANGES.find(range => range.min === minPrice && range.max === maxPrice)?.label || "All Prices"
-  const hasFilters = category || minPrice || maxPrice || inStock || keyword
+  const hasFilters = category || minPrice || maxPrice || inStock || keyword || isFeatured
 
   return (
     <div className="bg-surface min-h-screen">
@@ -95,12 +97,33 @@ export default function ProductsPage() {
           <span className="label-overline text-tertiary mb-3 block">Shop</span>
           <div className="flex items-end justify-between gap-4 flex-wrap">
             <h1 className="headline-lg text-4xl text-on-surface">
-              {category || "All Products"}
+              {isFeatured ? "Featured Collections" : category || "All Products"}
               {total > 0 && <span className="ml-3 font-body font-normal text-lg text-secondary">({total})</span>}
             </h1>
             <select value={sort} onChange={e => setParam("sort", e.target.value)} className="input-field w-auto py-2 text-xs font-label uppercase tracking-wider">
               {SORT_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
+          </div>
+          <p className="font-body text-sm text-secondary mt-4 max-w-2xl">
+            Discover surveillance, alarms, networking, and access control systems chosen for reliability, clean installation, and long-term performance.
+          </p>
+          <div className="md:hidden mt-6">
+            <div className="mobile-filter-rail">
+              <button onClick={() => { setParam("isFeatured", ""); setParam("category", "") }} className={`filter-chip ${!category && !isFeatured ? "active" : ""}`}>All</button>
+              <button onClick={() => setParam("isFeatured", isFeatured ? "" : "true")} className={`filter-chip ${isFeatured ? "active" : ""}`}>Featured</button>
+              {CATEGORIES.map(currentCategory => (
+                <button
+                  key={currentCategory}
+                  onClick={() => {
+                    setParam("isFeatured", "")
+                    setParam("category", category === currentCategory ? "" : currentCategory)
+                  }}
+                  className={`filter-chip ${category === currentCategory ? "active" : ""}`}
+                >
+                  {currentCategory}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -123,7 +146,10 @@ export default function ProductsPage() {
                   {["", ...CATEGORIES].map(currentCategory => (
                     <button
                       key={currentCategory || "all"}
-                      onClick={() => setParam("category", currentCategory)}
+                      onClick={() => {
+                        setParam("isFeatured", "")
+                        setParam("category", currentCategory)
+                      }}
                       className={`w-full text-left px-3 py-2 text-sm font-body rounded-sm transition-colors ${
                         currentCategory === category ? "bg-on-surface text-inverse-on-surface font-medium" : "text-secondary hover:bg-surface-container hover:text-on-surface"
                       }`}
@@ -159,6 +185,14 @@ export default function ProductsPage() {
                 </label>
               </div>
 
+              <div>
+                <p className="label-overline mb-3">Curated</p>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" checked={Boolean(isFeatured)} onChange={e => setParam("isFeatured", e.target.checked ? "true" : "")} className="w-3.5 h-3.5 accent-on-surface" />
+                  <span className="font-body text-sm text-secondary">Featured only</span>
+                </label>
+              </div>
+
               {hasFilters && (
                 <button onClick={() => setSearchParams({})} className="label-overline text-tertiary hover:text-on-surface transition-colors text-left">
                   Clear all filters
@@ -168,6 +202,14 @@ export default function ProductsPage() {
           </aside>
 
           <div className="flex-1 min-w-0">
+            {!loading && products.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                {category && <span className="status-badge bg-surface-container text-on-surface">Category: {category}</span>}
+                {isFeatured && <span className="status-badge bg-tertiary-container text-on-tertiary-container">Featured</span>}
+                {inStock && <span className="status-badge bg-surface-container-high text-on-surface">In stock</span>}
+                {(minPrice || maxPrice) && <span className="status-badge bg-surface-container text-on-surface">Price filtered</span>}
+              </div>
+            )}
             {loading ? (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 {[...Array(6)].map((_, i) => (

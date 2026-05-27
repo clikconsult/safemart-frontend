@@ -15,7 +15,7 @@ export default function PaymentCallback() {
     paymentApi.verify(reference)
       .then(() => { setStatus("success"); fetchCart() })
       .catch(() => setStatus("failed"))
-  }, [reference])
+  }, [reference, fetchCart])
 
   return (
     <div className="bg-surface min-h-[80vh] flex items-center justify-center px-6">

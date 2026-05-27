@@ -2,7 +2,7 @@ import { LegalLayout, LegalSection, LegalList } from "./LegalLayout"
 
 export default function PrivacyPolicy() {
   return (
-    <LegalLayout label="Legal" title="Privacy Policy" lastUpdated="April 2025">
+    <LegalLayout label="Legal" title="Privacy Policy" lastUpdated="April 2026">
       <LegalSection title="1. Introduction">
         <p>
           Safemart is committed to protecting your personal information. This
@@ -71,9 +71,9 @@ export default function PrivacyPolicy() {
       <LegalSection title="7. Contact Us">
         <div className="mt-3 p-5 bg-surface-container-low rounded-md ghost-border space-y-1">
           <p className="font-headline font-bold text-sm text-on-surface">Safemart</p>
-          <p>Email: privacy@safemart.ng</p>
-          <p>Phone: +234 800 000 0000</p>
-          <p>Address: Port Harcourt, Rivers State, Nigeria</p>
+          <p>Email: privacy@safemartng.com</p>
+          <p>Phone: +234 802 639 5499</p>
+          <p>Address: 10, Wellington Bassey Way, Uyo, Akwa Ibom State, Nigeria</p>
         </div>
       </LegalSection>
     </LegalLayout>

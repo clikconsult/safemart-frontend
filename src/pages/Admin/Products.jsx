@@ -1,31 +1,153 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
 import { Link } from "react-router-dom"
 import { productsApi, uploadApi } from "../../api/services"
 import { LoadingPage, Price, Pagination } from "../../components/ui"
 
-const CATEGORIES = ["CCTV", "Alarms", "Access Control", "Intercom", "Networking", "Other"]
-const BLANK = { name: "", description: "", price: "", discountPrice: "", category: "CCTV", brand: "", stock: "", isFeatured: false }
+/* ── Tabler icons CDN ────────────────────────────────────────────── */
+if (typeof document !== "undefined" && !document.getElementById("_ti")) {
+  const l = document.createElement("link")
+  l.id = "_ti"; l.rel = "stylesheet"
+  l.href = "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"
+  document.head.appendChild(l)
+}
 
+/* ── Tokens ──────────────────────────────────────────────────────── */
+const C = {
+  bg:       "var(--color-background-primary)",
+  surface:  "var(--color-background-secondary)",
+  page:     "var(--color-background-tertiary)",
+  border:   "var(--color-border-tertiary)",
+  borderMd: "var(--color-border-secondary)",
+  text:     "var(--color-text-primary)",
+  muted:    "var(--color-text-secondary)",
+  faint:    "var(--color-text-tertiary)",
+  mono:     "var(--font-mono)",
+  radMd:    "var(--border-radius-md)",
+  radLg:    "var(--border-radius-lg)",
+}
+
+const CATEGORIES = ["CCTV", "Alarms", "Access Control", "Intercom", "Networking", "Other"]
+
+const BLANK = {
+  name: "", description: "", price: "", discountPrice: "",
+  category: "", brand: "", stock: "",
+  isFeatured: false, isActive: true,
+}
+
+/* ── Atoms ───────────────────────────────────────────────────────── */
+const Icon = ({ n, size = 14, style = {} }) => (
+  <i className={`ti ti-${n}`} aria-hidden="true" style={{ fontSize: size, lineHeight: 1, flexShrink: 0, ...style }} />
+)
+const Ol = ({ children, mb = 10 }) => (
+  <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C.faint, marginBottom: mb }}>
+    {children}
+  </p>
+)
+const Chip = ({ children, bg, color }) => (
+  <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 7px", borderRadius: 10, letterSpacing: ".04em", textTransform: "capitalize", background: bg, color, display: "inline-block", whiteSpace: "nowrap" }}>
+    {children}
+  </span>
+)
+const TblWrap = ({ children }) => (
+  <div style={{ background: C.bg, border: `0.5px solid ${C.border}`, borderRadius: C.radLg, overflow: "hidden" }}>
+    {children}
+  </div>
+)
+const TblHead = ({ cols, labels }) => (
+  <div style={{ display: "grid", gridTemplateColumns: cols, padding: "7px 16px", background: C.surface, borderBottom: `0.5px solid ${C.border}` }}>
+    {labels.map(l => <span key={l} style={{ fontSize: 9, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: C.faint }}>{l}</span>)}
+  </div>
+)
+const TblRow = ({ cols, children, last, dim }) => (
+  <div style={{ display: "grid", gridTemplateColumns: cols, padding: "9px 16px", alignItems: "center", borderBottom: last ? "none" : `0.5px solid ${C.border}`, opacity: dim ? 0.45 : 1 }}>
+    {children}
+  </div>
+)
+function Empty({ icon, text }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "48px 20px" }}>
+      <Icon n={icon} size={26} style={{ color: C.faint }} />
+      <p style={{ fontSize: 12, color: C.faint }}>{text}</p>
+    </div>
+  )
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+const btnBase    = { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 500, padding: "6px 12px", borderRadius: C.radMd, cursor: "pointer", border: `0.5px solid ${C.border}`, background: C.bg, color: C.text }
+const btnPrimary = { ...btnBase, background: C.text, color: C.bg, border: "none" }
+const btnDanger  = { ...btnBase, background: "#FCEBEB", color: "#A32D2D", border: "0.5px solid #F09595" }
+
+/* ── Toggle ──────────────────────────────────────────────────────── */
+function Toggle({ value, onChange, label, activeColor = "#3B6D11", activeBg = "#EAF3DE" }) {
+  return (
+    <button onClick={() => onChange(!value)} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", padding: "6px 10px", borderRadius: C.radMd, border: `0.5px solid ${value ? activeColor : C.border}`, background: value ? activeBg : C.surface, transition: "all .15s" }}>
+      <div style={{ width: 28, height: 16, borderRadius: 8, background: value ? activeColor : C.borderMd, position: "relative", transition: "background .15s", flexShrink: 0 }}>
+        <div style={{ position: "absolute", top: 2, left: value ? 14 : 2, width: 12, height: 12, borderRadius: "50%", background: "#fff", transition: "left .15s" }} />
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 500, color: value ? activeColor : C.muted }}>{label}</span>
+    </button>
+  )
+}
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+function Modal({ title, subtitle, onClose, children, footer, width = 600 }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 16 }}>
+      <div style={{ background: C.bg, border: `0.5px solid ${C.border}`, borderRadius: C.radLg, width, maxWidth: "100%", maxHeight: "92vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.18)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "14px 18px", borderBottom: `0.5px solid ${C.border}`, flexShrink: 0 }}>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 500, color: C.text }}>{title}</p>
+            {subtitle && <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>{subtitle}</p>}
+          </div>
+          <button onClick={onClose} style={{ ...btnBase, padding: "3px 6px", border: "none", background: "transparent", color: C.faint }}>
+            <Icon n="x" size={15} />
+          </button>
+        </div>
+        <div style={{ overflowY: "auto", padding: "18px 18px 4px", flex: 1 }}>{children}</div>
+        {footer && (
+          <div style={{ padding: "12px 18px", borderTop: `0.5px solid ${C.border}`, flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── Form field ──────────────────────────────────────────────────── */
+const Field = ({ label, hint, children, span2 = false }) => (
+  <div style={{ marginBottom: 13, gridColumn: span2 ? "1 / -1" : undefined }}>
+    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".07em", textTransform: "uppercase", color: C.faint, marginBottom: 5 }}>{label}</p>
+    {children}
+    {hint && <p style={{ fontSize: 10, color: C.faint, marginTop: 4 }}>{hint}</p>}
+  </div>
+)
+const inp = { width: "100%", fontSize: 12, padding: "7px 10px", borderRadius: C.radMd, border: `0.5px solid ${C.borderMd}`, background: C.bg, color: C.text, outline: "none", boxSizing: "border-box" }
+const sel = { ...inp, cursor: "pointer" }
+
+/* ══════════════════════════════════════════════════════════════════
+   MAIN
+══════════════════════════════════════════════════════════════════ */
 export default function AdminProducts() {
-  const [products, setProducts] = useState([])
-  const [pages, setPages] = useState(1)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null)
-  const [form, setForm] = useState(BLANK)
-  const [saving, setSaving] = useState(false)
-  const [existingImages, setExistingImages] = useState([])
-  const [newFiles, setNewFiles] = useState([])
-  const [previews, setPreviews] = useState([])
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef(null)
+  const [products,     setProducts]     = useState([])
+  const [pages,        setPages]        = useState(1)
+  const [page,         setPage]         = useState(1)
+  const [loading,      setLoading]      = useState(true)
+  const [filterCat,    setFilterCat]    = useState("")
+  const [modal,        setModal]        = useState(null)
+  const [form,         setForm]         = useState(BLANK)
+  const [existingImgs, setExistingImgs] = useState([])   // string[]
+  const [newFiles,     setNewFiles]     = useState([])   // File[]
+  const [previews,     setPreviews]     = useState([])   // blob URLs
+  const [uploading,    setUploading]    = useState(false)
+  const [saving,       setSaving]       = useState(false)
+  const fileRef = useRef()
 
   const fetchProducts = async () => {
     setLoading(true)
-
     try {
-      const res = await productsApi.getAll({ page, limit: 15 })
+      const res = await productsApi.getAll({ page, limit: 15, ...(filterCat && { category: filterCat }) })
       setProducts(res.data.data)
       setPages(res.data.pages)
     } catch {
@@ -34,95 +156,75 @@ export default function AdminProducts() {
     }
   }
 
-  useEffect(() => {
-    fetchProducts()
-  }, [page])
+  useEffect(() => { fetchProducts() }, [page, filterCat])
+
+  /* ── helpers ── */
+  const f = v => setForm(x => ({ ...x, ...v }))
 
   const openCreate = () => {
-    setForm(BLANK)
-    setExistingImages([])
-    setNewFiles([])
-    setPreviews([])
-    setModal("create")
+    setForm(BLANK); setExistingImgs([]); setNewFiles([]); setPreviews([]); setModal("create")
   }
-
-  const openEdit = (product) => {
+  const openEdit = p => {
     setForm({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      discountPrice: product.discountPrice || "",
-      category: product.category,
-      brand: product.brand || "",
-      stock: product.stock,
-      isFeatured: product.isFeatured,
+      name: p.name || "", description: p.description || "",
+      price: p.price ?? "", discountPrice: p.discountPrice ?? "",
+      category: p.category || "", brand: p.brand || "",
+      stock: p.stock ?? "", isFeatured: !!p.isFeatured,
+      isActive: p.isActive !== false,
     })
-    setExistingImages(product.images || [])
-    setNewFiles([])
-    setPreviews([])
-    setModal(product)
+    setExistingImgs([...(p.images || [])])
+    setNewFiles([]); setPreviews([]); setModal(p)
   }
-
   const closeModal = () => {
-    previews.forEach(url => URL.revokeObjectURL(url))
-    setNewFiles([])
-    setPreviews([])
-    setExistingImages([])
-    setModal(null)
+    previews.forEach(u => URL.revokeObjectURL(u))
+    setNewFiles([]); setPreviews([]); setExistingImgs([]); setModal(null); setSaving(false)
   }
 
-  const set = (key) => (event) => {
-    const value = event.target.type === "checkbox" ? event.target.checked : event.target.value
-    setForm(current => ({ ...current, [key]: value }))
+  const handlePick = files => {
+    const arr = Array.from(files)
+    const total = existingImgs.length + newFiles.length + arr.length
+    if (total > 5) { toast.error(`Can only add ${5 - existingImgs.length - newFiles.length} more image(s)`); return }
+    const bad = arr.filter(f => !f.type.startsWith("image/"))
+    if (bad.length) { toast.error("Only image files are allowed"); return }
+    setNewFiles(prev  => [...prev, ...arr])
+    setPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))])
+  }
+  const removeExisting = i => setExistingImgs(prev => prev.filter((_, idx) => idx !== i))
+  const removeNew      = i => {
+    URL.revokeObjectURL(previews[i])
+    setNewFiles(prev  => prev.filter((_, idx) => idx !== i))
+    setPreviews(prev => prev.filter((_, idx) => idx !== i))
   }
 
-  const handleFileSelect = (event) => {
-    const files = Array.from(event.target.files)
-    if (!files.length) return
-
-    const totalAfter = existingImages.length + newFiles.length + files.length
-    if (totalAfter > 5) {
-      toast.error(`Can only add ${5 - existingImages.length - newFiles.length} more image(s)`)
-      return
-    }
-
-    const invalid = files.filter(file => !file.type.startsWith("image/"))
-    if (invalid.length) {
-      toast.error("Only image files are allowed")
-      return
-    }
-
-    setNewFiles(prev => [...prev, ...files])
-    setPreviews(prev => [...prev, ...files.map(file => URL.createObjectURL(file))])
-    event.target.value = ""
-  }
-
-  const removeExisting = (index) => setExistingImages(prev => prev.filter((_, idx) => idx !== index))
-
-  const removeNew = (index) => {
-    URL.revokeObjectURL(previews[index])
-    setNewFiles(prev => prev.filter((_, idx) => idx !== index))
-    setPreviews(prev => prev.filter((_, idx) => idx !== index))
-  }
-
-  const handleSave = async (event) => {
-    event.preventDefault()
-
+  const handleSave = async () => {
+    if (!form.name.trim())  { toast.error("Product name is required"); return }
+    if (!form.price)        { toast.error("Price is required"); return }
+    if (!form.category)     { toast.error("Category is required"); return }
+    setSaving(true)
     try {
-      setSaving(true)
-      let uploadedUrls = []
-
+      let uploaded = []
       if (newFiles.length > 0) {
         setUploading(true)
-        const formData = new FormData()
-        newFiles.forEach(file => formData.append("images", file))
-        const res = await uploadApi.productImages(formData)
-        uploadedUrls = res.data.data.urls
+        const fd = new FormData()
+        newFiles.forEach(file => fd.append("images", file))
+        const res = await uploadApi.productImages(fd)
+        /* handle both { data: { data: { urls: [] } } } and { data: { data: [] } } shapes */
+        const raw = res.data?.data?.urls ?? res.data?.data ?? res.data ?? []
+        uploaded = Array.isArray(raw) ? raw : []
         setUploading(false)
       }
-
-      const payload = { ...form, images: [...existingImages, ...uploadedUrls] }
-
+      const payload = {
+        name:          form.name.trim(),
+        description:   form.description.trim(),
+        price:         Number(form.price),
+        discountPrice: form.discountPrice ? Number(form.discountPrice) : 0,
+        category:      form.category,
+        brand:         form.brand.trim(),
+        stock:         Number(form.stock) || 0,
+        isFeatured:    form.isFeatured,
+        isActive:      form.isActive,
+        images:        [...existingImgs, ...uploaded],
+      }
       if (modal === "create") {
         await productsApi.create(payload)
         toast.success("Product created")
@@ -130,191 +232,253 @@ export default function AdminProducts() {
         await productsApi.update(modal._id, payload)
         toast.success("Product updated")
       }
-
       closeModal()
       fetchProducts()
     } catch (err) {
       setUploading(false)
       toast.error(err.response?.data?.message || "Save failed")
-    } finally {
       setSaving(false)
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this product?")) return
-
-    try {
-      await productsApi.remove(id)
-      toast.success("Product deleted")
-      fetchProducts()
-    } catch {
-      toast.error("Failed to delete")
-    }
+  const handleDelete = async id => {
+    if (!window.confirm("Delete this product? This cannot be undone.")) return
+    try { await productsApi.remove(id); toast.success("Deleted"); fetchProducts() }
+    catch { toast.error("Failed to delete") }
   }
 
-  const totalImages = existingImages.length + newFiles.length
+  /* Quick-toggle isFeatured or isActive from the row */
+  const quickToggle = async (product, field) => {
+    try {
+      const res = await productsApi.update(product._id, { [field]: !product[field] })
+      const updated = res.data.data || res.data
+      setProducts(prev => prev.map(p => p._id === product._id ? updated : p))
+    } catch { toast.error("Failed to update") }
+  }
+
+  const isCreate     = modal === "create"
+  const totalImgs    = existingImgs.length + newFiles.length
+  const hasDisc      = p => p.discountPrice > 0
+  const discPreview  = form.price && form.discountPrice && Number(form.discountPrice) > 0 && Number(form.discountPrice) < Number(form.price)
+    ? Math.round((1 - Number(form.discountPrice) / Number(form.price)) * 100) : null
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <Link to="/admin" className="text-xs text-ink-400 hover:text-ink">&larr; Dashboard</Link>
-          <h1 className="page-title">Products</h1>
+    <div style={{ background: C.page, minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
+
+      {/* Top bar */}
+      <div style={{ background: C.bg, borderBottom: `0.5px solid ${C.border}`, padding: "14px 32px" }}>
+        <Link to="/admin" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: C.faint, textDecoration: "none", marginBottom: 10 }}>
+          <Icon n="arrow-left" size={13} /> Dashboard
+        </Link>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: C.faint, marginBottom: 4 }}>Admin</p>
+            <h1 style={{ fontSize: 22, fontWeight: 500, color: C.text }}>Products</h1>
+          </div>
+          <button onClick={openCreate} style={btnPrimary}>
+            <Icon n="plus" size={13} /> Add product
+          </button>
         </div>
-        <button onClick={openCreate} className="btn-primary text-xs py-2">+ New Product</button>
       </div>
 
-      {loading ? <LoadingPage /> : (
-        <>
-          <div className="card divide-y divide-ink-50 mb-6">
-            {products.length === 0 && <p className="text-sm text-ink-400 p-5">No products yet.</p>}
-            {products.map(product => (
-              <div key={product._id} className="flex items-center gap-4 p-4">
-                <div className="w-12 h-12 bg-ink-50 rounded-sm overflow-hidden shrink-0">
-                  {product.images?.[0] ? (
-                    <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-ink-100 flex items-center justify-center">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-300"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{product.name}</p>
-                  <p className="text-xs text-ink-400">{product.category} - Stock: {product.stock} - {product.images?.length || 0} image{product.images?.length !== 1 ? "s" : ""}</p>
-                </div>
-                {product.isFeatured && <span className="tag bg-sage-100 text-sage-dark text-[10px]">Featured</span>}
-                <Price amount={product.price} className="text-sm" />
-                <button onClick={() => openEdit(product)} className="text-xs text-ink-400 hover:text-ink transition-colors">Edit</button>
-                <button onClick={() => handleDelete(product._id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Delete</button>
-              </div>
+      {/* Body */}
+      <div style={{ padding: "20px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* Category filter + summary */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {["", ...CATEGORIES].map(c => (
+              <button key={c || "all"} onClick={() => { setFilterCat(c); setPage(1) }} style={{ fontSize: 10, fontWeight: 500, padding: "4px 10px", borderRadius: 12, cursor: "pointer", background: filterCat === c ? C.text : "transparent", color: filterCat === c ? C.bg : C.muted, border: `0.5px solid ${filterCat === c ? C.text : C.border}` }}>
+                {c || "All"}
+              </button>
             ))}
           </div>
-          <div className="flex justify-center">
-            <Pagination page={page} pages={pages} onPageChange={setPage} />
-          </div>
-        </>
-      )}
-
-      {modal !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-sm shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b border-ink-100 sticky top-0 bg-white z-10">
-              <h2 className="font-display font-semibold text-base">
-                {modal === "create" ? "New Product" : "Edit Product"}
-              </h2>
-              <button onClick={closeModal} className="text-ink-400 hover:text-ink transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className="p-5 space-y-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="section-label">Product Images</label>
-                  <span className="text-xs text-ink-400">{totalImages}/5</span>
-                </div>
-
-                {totalImages > 0 && (
-                  <div className="grid grid-cols-5 gap-2 mb-3">
-                    {existingImages.map((url, i) => (
-                      <div key={`e-${i}`} className="relative group aspect-square">
-                        <img src={url} alt="" className="w-full h-full object-cover rounded-sm border border-ink-100" />
-                        <button type="button" onClick={() => removeExisting(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full items-center justify-center hidden group-hover:flex shadow-sm">
-                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                        </button>
-                        {i === 0 && <span className="absolute bottom-0 left-0 right-0 text-[9px] text-center bg-black/50 text-white py-0.5 rounded-b-sm">Main</span>}
-                      </div>
-                    ))}
-                    {previews.map((url, i) => (
-                      <div key={`n-${i}`} className="relative group aspect-square">
-                        <img src={url} alt="" className="w-full h-full object-cover rounded-sm border border-sage/40 ring-1 ring-sage/20" />
-                        <button type="button" onClick={() => removeNew(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full items-center justify-center hidden group-hover:flex shadow-sm">
-                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                        </button>
-                        <span className="absolute bottom-0 left-0 right-0 text-[9px] text-center bg-sage/70 text-white py-0.5 rounded-b-sm">New</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {totalImages < 5 && (
-                  <>
-                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" multiple className="hidden" />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full border-2 border-dashed border-ink-200 rounded-sm py-5 flex flex-col items-center gap-1.5 text-ink-400 hover:border-ink hover:text-ink transition-colors"
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                      <span className="text-xs font-medium">Click to upload images</span>
-                      <span className="text-[11px] text-ink-300">PNG, JPG, WEBP - Up to {5 - totalImages} more - First image = main photo</span>
-                    </button>
-                  </>
-                )}
-
-                {uploading && (
-                  <div className="flex items-center gap-2 mt-2 text-xs text-sage">
-                    <div className="w-3 h-3 border border-sage/30 border-t-sage rounded-full animate-spin" />
-                    Uploading to Cloudinary...
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="section-label mb-2 block">Name</label>
-                <input required type="text" value={form.name} onChange={set("name")} className="input-field" placeholder="4MP IP Dome Camera" />
-              </div>
-
-              <div>
-                <label className="section-label mb-2 block">Description</label>
-                <textarea rows={3} required value={form.description} onChange={set("description")} className="input-field resize-none" placeholder="Full HD resolution with night vision..." />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="section-label mb-2 block">Price (NGN)</label>
-                  <input required type="number" min="0" value={form.price} onChange={set("price")} className="input-field" placeholder="45000" />
-                </div>
-                <div>
-                  <label className="section-label mb-2 block">Discount Price (NGN)</label>
-                  <input type="number" min="0" value={form.discountPrice} onChange={set("discountPrice")} className="input-field" placeholder="0" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="section-label mb-2 block">Category</label>
-                  <select value={form.category} onChange={set("category")} className="input-field">
-                    {CATEGORIES.map(category => <option key={category}>{category}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="section-label mb-2 block">Stock</label>
-                  <input required type="number" min="0" value={form.stock} onChange={set("stock")} className="input-field" placeholder="10" />
-                </div>
-              </div>
-
-              <div>
-                <label className="section-label mb-2 block">Brand</label>
-                <input type="text" value={form.brand} onChange={set("brand")} className="input-field" placeholder="Hikvision" />
-              </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.isFeatured} onChange={set("isFeatured")} className="w-4 h-4" />
-                <span className="text-sm font-medium text-ink">Feature this product on the homepage</span>
-              </label>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal} className="btn-secondary flex-1 justify-center">Cancel</button>
-                <button type="submit" disabled={saving || uploading} className="btn-primary flex-1 justify-center">
-                  {uploading ? "Uploading..." : saving ? "Saving..." : "Save Product"}
-                </button>
-              </div>
-            </form>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Chip bg="#EAF3DE" color="#3B6D11">{products.filter(p => p.isFeatured).length} featured</Chip>
+            <Chip bg="#FCEBEB" color="#A32D2D">{products.filter(p => p.isActive === false).length} hidden</Chip>
           </div>
         </div>
+
+        {loading ? <LoadingPage /> : (
+          <>
+            <TblWrap>
+              <TblHead cols="50px 1fr 100px 90px 52px 80px 80px 76px" labels={["","Product","Category","Price","Stock","Featured","Visible","Actions"]} />
+              {products.length === 0 && <Empty icon="box" text="No products found" />}
+              {products.map((p, i) => (
+                <TblRow key={p._id} cols="50px 1fr 100px 90px 52px 80px 80px 76px" last={i === products.length - 1} dim={p.isActive === false}>
+                  {/* Thumbnail */}
+                  {p.images?.[0]
+                    ? <img src={p.images[0]} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: C.radMd, border: `0.5px solid ${C.border}` }} />
+                    : <div style={{ width: 36, height: 36, borderRadius: C.radMd, background: C.surface, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Icon n="photo" size={14} style={{ color: C.faint }} />
+                      </div>
+                  }
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 500, color: C.text, lineHeight: 1.3 }}>{p.name}</p>
+                    <p style={{ fontSize: 10, color: C.faint }}>{p.brand || "—"}</p>
+                  </div>
+                  <span style={{ fontSize: 11, color: C.muted }}>{p.category || "—"}</span>
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 500, color: C.text }}><Price amount={p.price} /></p>
+                    {hasDisc(p) && <p style={{ fontSize: 10, color: "#3B6D11" }}>-{Math.round((1 - p.discountPrice / p.price) * 100)}% · <Price amount={p.discountPrice} /></p>}
+                  </div>
+                  <span style={{ fontSize: 11, color: (p.stock ?? 99) < 5 ? "#A32D2D" : C.muted, fontWeight: (p.stock ?? 99) < 5 ? 600 : 400 }}>
+                    {p.stock ?? "—"}
+                  </span>
+                  {/* Featured toggle */}
+                  <button onClick={() => quickToggle(p, "isFeatured")} style={{ ...btnBase, padding: "3px 8px", fontSize: 10, background: p.isFeatured ? "#EAF3DE" : C.surface, color: p.isFeatured ? "#3B6D11" : C.faint, border: `0.5px solid ${p.isFeatured ? "#3B6D11" : C.border}` }}>
+                    <Icon n={p.isFeatured ? "star-filled" : "star"} size={11} style={{ color: p.isFeatured ? "#3B6D11" : C.faint }} />
+                    {p.isFeatured ? "Yes" : "No"}
+                  </button>
+                  {/* Active toggle */}
+                  <button onClick={() => quickToggle(p, "isActive")} style={{ ...btnBase, padding: "3px 8px", fontSize: 10, background: p.isActive !== false ? "#EAF3DE" : "#FCEBEB", color: p.isActive !== false ? "#3B6D11" : "#A32D2D", border: `0.5px solid ${p.isActive !== false ? "#3B6D11" : "#F09595"}` }}>
+                    <Icon n={p.isActive !== false ? "eye" : "eye-off"} size={11} />
+                    {p.isActive !== false ? "Live" : "Hidden"}
+                  </button>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <button onClick={() => openEdit(p)} style={{ ...btnBase, padding: "4px 7px" }}><Icon n="edit" size={12} /></button>
+                    <button onClick={() => handleDelete(p._id)} style={{ ...btnDanger, padding: "4px 7px" }}><Icon n="trash" size={12} /></button>
+                  </div>
+                </TblRow>
+              ))}
+            </TblWrap>
+
+            {pages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+                <Pagination page={page} pages={pages} onPageChange={setPage} />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ══ Product modal ══ */}
+      {modal && (
+        <Modal
+          title={isCreate ? "Add new product" : "Edit product"}
+          subtitle={isCreate ? "Fill in the details to list a new product." : `Editing: ${modal.name}`}
+          onClose={closeModal}
+          footer={<>
+            <button onClick={closeModal} style={btnBase}>Cancel</button>
+            <button onClick={handleSave} disabled={saving || uploading} style={{ ...btnPrimary, opacity: (saving || uploading) ? .6 : 1 }}>
+              <Icon n={isCreate ? "plus" : "check"} size={13} />
+              {uploading ? "Uploading images…" : saving ? "Saving…" : isCreate ? "Create product" : "Save changes"}
+            </button>
+          </>}
+        >
+          {/* ── Visibility toggles ── */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 18, padding: "12px 14px", background: C.surface, borderRadius: C.radMd }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".07em", textTransform: "uppercase", color: C.faint, marginBottom: 7 }}>Visibility</p>
+              <Toggle value={form.isActive} onChange={v => f({ isActive: v })} label={form.isActive ? "Live — visible to customers" : "Hidden"} activeColor="#3B6D11" activeBg="#EAF3DE" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".07em", textTransform: "uppercase", color: C.faint, marginBottom: 7 }}>Featured</p>
+              <Toggle value={form.isFeatured} onChange={v => f({ isFeatured: v })} label={form.isFeatured ? "On home page" : "Not featured"} activeColor="#EF9F27" activeBg="#FAEEDA" />
+            </div>
+          </div>
+
+          {/* ── Fields grid ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
+
+            <Field label="Product name" span2>
+              <input value={form.name} onChange={e => f({ name: e.target.value })} style={inp} placeholder="e.g. Hikvision 4MP IP Camera" />
+            </Field>
+
+            <Field label="Category">
+              <select value={form.category} onChange={e => f({ category: e.target.value })} style={sel}>
+                <option value="">Select category…</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Brand">
+              <input value={form.brand} onChange={e => f({ brand: e.target.value })} style={inp} placeholder="e.g. Hikvision" />
+            </Field>
+
+            <Field label="Price (₦)">
+              <input type="number" min="0" value={form.price} onChange={e => f({ price: e.target.value })} style={inp} placeholder="0" />
+            </Field>
+
+            <Field label="Discount price (₦)" hint="Leave 0 for no discount">
+              <input type="number" min="0" value={form.discountPrice} onChange={e => f({ discountPrice: e.target.value })} style={inp} placeholder="0" />
+            </Field>
+
+            <Field label="Stock quantity">
+              <input type="number" min="0" value={form.stock} onChange={e => f({ stock: e.target.value })} style={inp} placeholder="0" />
+            </Field>
+
+            <Field label="Description" span2>
+              <textarea value={form.description} onChange={e => f({ description: e.target.value })} rows={3} style={{ ...inp, resize: "vertical" }} placeholder="Full HD resolution with night vision…" />
+            </Field>
+
+            {/* Discount preview */}
+            {discPreview && (
+              <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#EAF3DE", borderRadius: C.radMd, marginBottom: 4 }}>
+                <Icon n="tag" size={13} style={{ color: "#3B6D11" }} />
+                <p style={{ fontSize: 11, color: "#3B6D11" }}>
+                  <strong>{discPreview}% off</strong> — customers pay <strong><Price amount={Number(form.discountPrice)} /></strong> instead of <Price amount={Number(form.price)} />
+                </p>
+              </div>
+            )}
+
+            {/* ── Images ── */}
+            <Field label={`Product images (${totalImgs} / 5)`} hint="First image is the main display image on the product page." span2>
+
+              {/* Existing */}
+              {existingImgs.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: ".07em", textTransform: "uppercase", color: C.faint, marginBottom: 7 }}>Saved — click ✕ to remove</p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {existingImgs.map((url, i) => (
+                      <div key={i} style={{ position: "relative", width: 76, height: 76 }}>
+                        <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: C.radMd, border: `0.5px solid ${C.border}`, display: "block" }} />
+                        <button onClick={() => removeExisting(i)} style={{ position: "absolute", top: -7, right: -7, width: 20, height: 20, borderRadius: "50%", background: "#FCEBEB", color: "#A32D2D", border: "0.5px solid #F09595", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                          <Icon n="x" size={11} />
+                        </button>
+                        {i === 0 && <span style={{ position: "absolute", bottom: 4, left: 4, fontSize: 8, fontWeight: 700, letterSpacing: ".06em", background: "rgba(0,0,0,.6)", color: "#fff", padding: "1px 5px", borderRadius: 4 }}>MAIN</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New previews */}
+              {previews.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <p style={{ fontSize: 9, fontWeight: 600, letterSpacing: ".07em", textTransform: "uppercase", color: C.faint, marginBottom: 7 }}>New — will upload on save</p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {previews.map((src, i) => (
+                      <div key={i} style={{ position: "relative", width: 76, height: 76 }}>
+                        <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: C.radMd, border: `1px dashed ${C.borderMd}`, display: "block" }} />
+                        <button onClick={() => removeNew(i)} style={{ position: "absolute", top: -7, right: -7, width: 20, height: 20, borderRadius: "50%", background: "#FCEBEB", color: "#A32D2D", border: "0.5px solid #F09595", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                          <Icon n="x" size={11} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload button */}
+              {totalImgs < 5 && (
+                <>
+                  <input ref={fileRef} type="file" accept="image/*" multiple onChange={e => { handlePick(e.target.files); e.target.value = "" }} style={{ display: "none" }} />
+                  <button onClick={() => fileRef.current?.click()} style={{ ...btnBase, width: "100%", justifyContent: "center", padding: "10px", border: `1px dashed ${C.borderMd}` }}>
+                    <Icon n="upload" size={13} />
+                    {totalImgs > 0 ? `Add more images (${5 - totalImgs} remaining)` : "Upload images"}
+                  </button>
+                </>
+              )}
+
+              {uploading && (
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 8, fontSize: 11, color: C.muted }}>
+                  <Icon n="loader" size={13} style={{ color: C.faint }} /> Uploading to Cloudinary…
+                </div>
+              )}
+            </Field>
+          </div>
+        </Modal>
       )}
     </div>
   )

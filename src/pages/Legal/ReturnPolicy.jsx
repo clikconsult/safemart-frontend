@@ -2,7 +2,7 @@ import { LegalLayout, LegalSection, LegalList } from "./LegalLayout"
 
 export default function ReturnPolicy() {
   return (
-    <LegalLayout label="Policy" title="Return & Refund Policy" lastUpdated="April 2025">
+    <LegalLayout label="Policy" title="Return & Refund Policy" lastUpdated="April 2026">
       <LegalSection title="Return Eligibility">
         <p>
           You may return a product within{" "}
@@ -32,7 +32,7 @@ export default function ReturnPolicy() {
             {
               step: "01",
               title: "Contact Us",
-              desc: "Email returns@safemart.ng within 7 days of receiving your order. Include your order number and reason for return.",
+              desc: "Email returns@safemartng.com within 7 days of receiving your order. Include your order number and reason for return.",
             },
             {
               step: "02",
@@ -69,9 +69,9 @@ export default function ReturnPolicy() {
       <LegalSection title="Contact for Returns">
         <div className="p-5 bg-surface-container-low rounded-md ghost-border space-y-1">
           <p className="font-headline font-bold text-sm text-on-surface">Safemart Returns</p>
-          <p>Email: returns@safemart.ng</p>
-          <p>Phone: +234 800 000 0000</p>
-          <p>Hours: Monday - Friday, 9am - 5pm WAT</p>
+          <p>Email: returns@safemartng.com</p>
+          <p>Phone: +234 802 639 5499</p>
+          <p>Address: 10, Wellington Bassey Way, Uyo, Akwa Ibom State, Nigeria</p>
         </div>
       </LegalSection>
     </LegalLayout>

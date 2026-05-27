@@ -2,7 +2,7 @@ import { LegalLayout, LegalSection, LegalList } from "./LegalLayout"
 
 export default function ShippingPolicy() {
   return (
-    <LegalLayout label="Policy" title="Shipping Policy" lastUpdated="April 2025">
+    <LegalLayout label="Policy" title="Shipping Policy" lastUpdated="April 2026">
       <LegalSection title="Shipping Rates">
         <div className="mt-2 overflow-hidden rounded-md ghost-border">
           <table className="w-full text-sm">
@@ -38,7 +38,7 @@ export default function ShippingPolicy() {
       <LegalSection title="Delivery Timeframes">
         <LegalList
           items={[
-            "Port Harcourt and Rivers State - 1-2 business days",
+            "Uyo and Akwa Ibom State - 1-2 business days",
             "Lagos, Abuja, and major cities - 2-3 business days",
             "Other states - 3-5 business days",
             "Remote or rural areas - 5-7 business days",
@@ -62,8 +62,8 @@ export default function ShippingPolicy() {
       <LegalSection title="Contact for Shipping">
         <div className="p-5 bg-surface-container-low rounded-md ghost-border space-y-1">
           <p className="font-headline font-bold text-sm text-on-surface">Safemart Logistics</p>
-          <p>Email: shipping@safemart.ng</p>
-          <p>Phone: +234 800 000 0000</p>
+          <p>Email: shipping@safemartng.com</p>
+          <p>Phone: +234 802 639 5499</p>
           <p>Hours: Monday - Saturday, 8am - 6pm WAT</p>
         </div>
       </LegalSection>

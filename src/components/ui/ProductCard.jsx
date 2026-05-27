@@ -62,6 +62,7 @@ export default function ProductCard({ product, index = 0 }) {
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {product.stock === 0 && <span className="status-badge bg-on-surface text-inverse-on-surface">Sold Out</span>}
           {hasDiscount && <span className="status-badge bg-tertiary-container text-on-tertiary-container">-{discountPercent}%</span>}
+          {product.isFeatured && <span className="status-badge bg-white/80 text-on-surface backdrop-blur-md">Featured</span>}
         </div>
 
         <div className="absolute top-3 right-3 flex flex-col gap-2 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
@@ -93,6 +94,14 @@ export default function ProductCard({ product, index = 0 }) {
         <h3 className="font-headline font-bold text-base text-on-surface leading-snug line-clamp-2 mb-2.5 group-hover:text-primary-fixed transition-colors duration-200">
           {product.name}
         </h3>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <p className="font-label text-[10px] uppercase tracking-[0.22em] text-secondary">
+            {product.brand || "Safemart Select"}
+          </p>
+          <p className={`font-label text-[10px] uppercase tracking-[0.2em] ${product.stock > 0 ? "text-secondary" : "text-error"}`}>
+            {product.stock > 0 ? `${product.stock} in stock` : "Unavailable"}
+          </p>
+        </div>
         {product.numReviews > 0 && <div className="mb-2.5"><Stars rating={product.ratings} count={product.numReviews} /></div>}
         <div className="flex items-center gap-2.5">
           <Price amount={displayPrice} className="text-sm text-on-surface" />

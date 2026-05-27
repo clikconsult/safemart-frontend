@@ -62,13 +62,13 @@ export default function Contact() {
             {[
               {
                 label: "Email",
-                value: "hello@safemart.ng",
+                value: "hello@safemartng.com",
                 sub: "We reply within 24 hours",
                 icon: "M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z",
               },
               {
                 label: "Phone",
-                value: "+234 903 854 4515",
+                value: "+234 802 639 5499",
                 sub: "Mon - Sat, 8am - 6pm WAT",
                 icon: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.64 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6.29 6.29l.83-.83a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z",
               },
@@ -131,7 +131,7 @@ export default function Contact() {
                       value={form.name}
                       onChange={set("name")}
                       className="input-field"
-                      placeholder="John Doe"
+                      placeholder="Your Name"
                     />
                   </div>
                   <div>
@@ -148,9 +148,10 @@ export default function Contact() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="label-overline mb-2 block">Phone (optional)</label>
+                    <label className="label-overline mb-2 block">Phone</label>
                     <input
                       type="tel"
+                      required
                       value={form.phone}
                       onChange={set("phone")}
                       className="input-field"
