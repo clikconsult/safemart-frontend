@@ -7,16 +7,21 @@ const api = axios.create({
 
 // ── Token helpers ──────────────────────────────────────────
 export const tokenStorage = {
-  get:     ()      => localStorage.getItem("accessToken"),
-  set:     (token) => localStorage.setItem("accessToken", token),
-  clear:   ()      => localStorage.removeItem("accessToken"),
+  getAccess:     ()      => localStorage.getItem("accessToken"),
+  setAccess:     (token) => localStorage.setItem("accessToken", token),
+  getRefresh:    ()      => localStorage.getItem("refreshToken"),
+  setRefresh:    (token) => localStorage.setItem("refreshToken", token),
+  clear:         ()      => {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("refreshToken")
+  },
 }
 
 let refreshPromise = null
 
 // ── Attach token to every request ─────────────────────────
 api.interceptors.request.use((config) => {
-  const token = tokenStorage.get()
+  const token = tokenStorage.getAccess()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -37,14 +42,17 @@ function buildLoginRedirectUrl() {
 
 async function refreshSession() {
   if (!refreshPromise) {
-    refreshPromise = api.post("/auth/refresh", null, {
-      skipAuthRedirect: true,
-      skipAuthRefresh: true,
-    })
+    refreshPromise = api.post("/auth/refresh", 
+      { refreshToken: tokenStorage.getRefresh() }, // send in body
+      {
+        skipAuthRedirect: true,
+        skipAuthRefresh: true,
+      }
+    )
     .then((res) => {
-      // Save the new access token returned in the response body
-      const newToken = res.data?.accessToken
-      if (newToken) tokenStorage.set(newToken)
+      const { accessToken, refreshToken } = res.data
+      if (accessToken) tokenStorage.setAccess(accessToken)
+      if (refreshToken) tokenStorage.setRefresh(refreshToken)
       return res
     })
     .finally(() => { refreshPromise = null })
@@ -54,14 +62,13 @@ async function refreshSession() {
 
 api.interceptors.response.use(
   (res) => {
-    // Auto-save accessToken if backend returns it in response body
-    const token = res.data?.accessToken
-    if (token) tokenStorage.set(token)
+    const { accessToken, refreshToken } = res.data || {}
+    if (accessToken) tokenStorage.setAccess(accessToken)
+    if (refreshToken) tokenStorage.setRefresh(refreshToken)
     return res
   },
   async (error) => {
     const originalRequest = error.config || {}
-
     if (
       error.response?.status === 401 &&
       !originalRequest.skipAuthRefresh &&
@@ -75,11 +82,9 @@ api.interceptors.response.use(
         tokenStorage.clear()
       }
     }
-
     if (shouldRedirectToLogin(error)) {
       window.location.assign(buildLoginRedirectUrl())
     }
-
     return Promise.reject(error)
   }
 )
