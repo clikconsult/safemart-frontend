@@ -54,7 +54,7 @@ const HERO_SLIDES = [
 const COLLECTIONS = [
   { num: "01", label: "Surveillance", name: "CCTV Systems",    desc: "Cinematic clarity, 24/7 watch.",     cat: "CCTV",           image: images.cctv,       col: "col-span-12 md:col-span-7", aspect: "aspect-[4/3]" },
   { num: "02", label: "Perimeter",    name: "Alarm Systems",   desc: "Instant alert, total peace.",        cat: "Alarms",         image: images.alarm,      col: "col-span-12 md:col-span-5", aspect: "aspect-[4/3]" },
-  { num: "03", label: "Access",       name: "Control Systems", desc: "Who enters. You decide.",            cat: "Access Control", image: images.access,     col: "col-span-12 md:col-span-5", aspect: "aspect-[4/3]" },
+  { num: "03", label: "Access",       name: "Smart Homes", desc: "Who enters. You decide.",            cat: "Access Control", image: images.access,     col: "col-span-12 md:col-span-5", aspect: "aspect-[4/3]" },
   { num: "04", label: "Connected",    name: "Networking",      desc: "Infrastructure for the future.",     cat: "Networking",     image: images.networking, col: "col-span-12 md:col-span-7", aspect: "aspect-[4/3]" },
 ]
 

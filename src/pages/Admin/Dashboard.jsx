@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { adminApi, ordersApi, productsApi, uploadApi } from "../../api/services"
+import BulkImportModal from "../../components/admin/BulkImportModal"
 import { LoadingPage, Price } from "../../components/ui"
 
 /* ── Tabler icons ─────────────────────────────────────────────────── */
@@ -502,7 +503,8 @@ function OrdersView() {
 ══════════════════════════════════════════════════════════════════ */
 const EMPTY_FORM = {
   name: "", description: "", price: "", discountPrice: "",
-  category: "", brand: "", stock: "",
+  category: "", subCategory: "", brand: "", modelNumber: "", stock: "",
+  keySpecifications: "", costPrice: "", reorderLevel: "", notesVariants: "",
   isFeatured: false, isActive: true, images: [],
 }
 
@@ -518,6 +520,7 @@ function ProductsView() {
   const [uploading, setUploading] = useState(false)
   const [saving,    setSaving]    = useState(false)
   const [error,     setError]     = useState("")
+  const [bulkOpen,  setBulkOpen]  = useState(false)
   const fileRef = useRef()
 
   const load = () => {
@@ -533,7 +536,13 @@ function ProductsView() {
 
   const openCreate = () => { setForm(EMPTY_FORM); setNewFiles([]); setPreviews([]); setError(""); setModal("create") }
   const openEdit   = p  => {
-    setForm({ name: p.name || "", description: p.description || "", price: p.price ?? "", discountPrice: p.discountPrice ?? "", category: p.category || "", brand: p.brand || "", stock: p.stock ?? "", isFeatured: !!p.isFeatured, isActive: p.isActive !== false, images: [...(p.images || [])] })
+    setForm({
+      name: p.name || "", description: p.description || "", price: p.price ?? "", discountPrice: p.discountPrice ?? "",
+      category: p.category || "", subCategory: p.subCategory || "", brand: p.brand || "", modelNumber: p.modelNumber || "",
+      stock: p.stock ?? "", keySpecifications: p.keySpecifications || "", costPrice: p.costPrice ?? "",
+      reorderLevel: p.reorderLevel ?? "", notesVariants: p.notesVariants || "",
+      isFeatured: !!p.isFeatured, isActive: p.isActive !== false, images: [...(p.images || [])],
+    })
     setNewFiles([]); setPreviews([]); setError(""); setModal(p)
   }
   const closeModal = () => { setModal(null); setSaving(false); setUploading(false) }
@@ -565,7 +574,18 @@ function ProductsView() {
     setSaving(true); setError("")
     try {
       const freshUrls = await uploadFiles()
-      const payload = { name: form.name.trim(), description: form.description.trim(), price: Number(form.price), discountPrice: form.discountPrice ? Number(form.discountPrice) : 0, category: form.category, brand: form.brand.trim(), stock: Number(form.stock), isFeatured: form.isFeatured, isActive: form.isActive, images: [...form.images, ...freshUrls] }
+      const payload = {
+        name: form.name.trim(), description: form.description.trim(), price: Number(form.price),
+        discountPrice: form.discountPrice ? Number(form.discountPrice) : 0,
+        category: form.category, subCategory: form.subCategory.trim(),
+        brand: form.brand.trim(), modelNumber: form.modelNumber.trim(),
+        keySpecifications: form.keySpecifications.trim(),
+        costPrice: form.costPrice !== "" ? Number(form.costPrice) : undefined,
+        reorderLevel: form.reorderLevel !== "" ? Number(form.reorderLevel) : undefined,
+        notesVariants: form.notesVariants.trim(),
+        stock: Number(form.stock), isFeatured: form.isFeatured, isActive: form.isActive,
+        images: [...form.images, ...freshUrls],
+      }
       if (modal === "create") {
         const res = await productsApi.create(payload)
         setProducts(prev => [res.data.data || res.data, ...prev])
@@ -606,7 +626,10 @@ function ProductsView() {
               <button key={c} onClick={() => setFilterCat(c)} style={{ fontSize: 10, fontWeight: 500, padding: "4px 10px", borderRadius: 12, cursor: "pointer", background: filterCat === c ? C.text : "transparent", color: filterCat === c ? C.bg : C.muted, border: `0.5px solid ${filterCat === c ? C.text : C.border}` }}>{c}</button>
             ))}
           </div>
-          <button onClick={openCreate} style={btnPrimary}><Icon n="plus" size={13} />Add product</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setBulkOpen(true)} style={btnBase}><Icon n="file-upload" size={13} />Bulk upload</button>
+            <button onClick={openCreate} style={btnPrimary}><Icon n="plus" size={13} />Add product</button>
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -733,17 +756,35 @@ function ProductsView() {
             <Field label="Brand">
               <input value={form.brand} onChange={e => f({ brand: e.target.value })} style={inp} placeholder="e.g. Hikvision" />
             </Field>
+            <Field label="Sub-category" hint="e.g. Bullet, Turret, PTZ">
+              <input value={form.subCategory} onChange={e => f({ subCategory: e.target.value })} style={inp} placeholder="e.g. Bullet" />
+            </Field>
+            <Field label="Model number">
+              <input value={form.modelNumber} onChange={e => f({ modelNumber: e.target.value })} style={inp} placeholder="e.g. DS-2CD1047G3-LIU" />
+            </Field>
             <Field label="Price (₦)">
               <input type="number" min="0" value={form.price} onChange={e => f({ price: e.target.value })} style={inp} placeholder="0" />
             </Field>
             <Field label="Discount price (₦)" hint="Leave 0 for no discount">
               <input type="number" min="0" value={form.discountPrice} onChange={e => f({ discountPrice: e.target.value })} style={inp} placeholder="0" />
             </Field>
+            <Field label="Cost price (₦)" hint="Internal only — never shown to customers">
+              <input type="number" min="0" value={form.costPrice} onChange={e => f({ costPrice: e.target.value })} style={inp} placeholder="0" />
+            </Field>
             <Field label="Stock quantity">
               <input type="number" min="0" value={form.stock} onChange={e => f({ stock: e.target.value })} style={inp} placeholder="0" />
             </Field>
+            <Field label="Reorder level" hint="Alert threshold for restocking">
+              <input type="number" min="0" value={form.reorderLevel} onChange={e => f({ reorderLevel: e.target.value })} style={inp} placeholder="5" />
+            </Field>
             <Field label="Description" span2>
               <textarea value={form.description} onChange={e => f({ description: e.target.value })} rows={3} style={{ ...inp, resize: "vertical" }} placeholder="Describe the product…" />
+            </Field>
+            <Field label="Key specifications" span2 hint="Resolution, range, power, etc.">
+              <textarea value={form.keySpecifications} onChange={e => f({ keySpecifications: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} placeholder="4MP, 2.8mm lens, 30m IR, IP67, H.265+" />
+            </Field>
+            <Field label="Notes / variants" span2 hint="Colour, size, power options, etc.">
+              <textarea value={form.notesVariants} onChange={e => f({ notesVariants: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} placeholder="Also available in 2MP and 8MP versions" />
             </Field>
 
             {discountPreview && (
@@ -801,6 +842,13 @@ function ProductsView() {
             </div>
           )}
         </Modal>
+      )}
+
+      {bulkOpen && (
+        <BulkImportModal
+          onClose={() => setBulkOpen(false)}
+          onImported={load}
+        />
       )}
     </>
   )
