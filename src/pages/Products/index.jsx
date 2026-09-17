@@ -211,7 +211,7 @@ export default function ProductsPage() {
               </div>
             )}
             {loading ? (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                 {[...Array(6)].map((_, i) => (
                   <div key={i}>
                     <Skeleton className="aspect-[3/4] mb-4" />
@@ -229,7 +229,7 @@ export default function ProductsPage() {
               />
             ) : (
               <>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-14">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-14">
                   {products.map((product, i) => <ProductCard key={product._id} product={product} index={i} />)}
                 </div>
                 <div className="flex justify-center">
